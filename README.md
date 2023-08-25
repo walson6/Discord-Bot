@@ -1,5 +1,5 @@
 # Discord-Bot
-Discord bot with helpful commands can be used on any server   
+Discord bot with commands can be used in servers   
 Uses Discord API and GIPHY API
 
 ## Commands
