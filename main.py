@@ -80,27 +80,40 @@ async def gif(ctx,*,q="GIF"):
 @client.command()
 async def news(ctx):
     url = 'https://www.bbc.com/news'
-    response = requests.get(url)
-  
-    soup = BeautifulSoup(response.text, 'html.parser')
-    articles = soup.find_all('div', class_='gs-c-promo-body')
-    unwanted = ['BBC World News TV', 'BBC World Service Radio',
-                'News daily newsletter', 'Mobile app', 'Get in touch']
-  
-    count = 0
-
-    for article in articles:
-        article_title = article.find('h3').get_text(strip=True)
-        if article_title not in unwanted and count < 10:
-            article_link = article.find('a')['href'] if article.find('a') else 'No link available'
-            article_date = article.find('time')['datetime']
-            utc_time = datetime.strptime(article_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-            pst_time = utc_time.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=-8)))
-            formatted_date = pst_time.strftime("%d %b %Y, %I:%M %p %Z")
-            await ctx.channel.send(f"`{article_title}`\nArticle Link: bbc.com{article_link}\nPublished on: {formatted_date}")
-            count += 1
-            if count >= 10: #10 articles 
-                break
+    r = requests.get(url)
+    
+    soup = BeautifulSoup(r.text, 'html.parser')
+    
+    # Find all elements containing article titles
+    script = soup.find_all('h2')
+    links = soup.find_all('div')
+    
+    article_names = set() # To store unique article names
+    listName = []
+    
+    for div in links:
+        for attribute in div.find_all('a', href=True):
+            listName.append(attribute['href'])
+    
+    if script:
+        for index, article in enumerate(script[:12]):
+            article_title = article.text
+    
+            if article_title not in article_names: # Store unique article names
+                article_names.add(article_title)
+    
+        listIndex = 91
+        for index, unique_name in enumerate(article_names):
+            print(f"Article {index + 1}: {unique_name}")
+            print(f"(WIP) Link {(index) + 1}: https://www.bbc.com{listName[listIndex]}")
+            if listIndex <= 101:
+                listIndex += 1
+    
+        # for index in range(91, 101):
+        #     print(f"(WIP) Link {(index-91) + 1}: https://www.bbc.com{listName[index]}")
+    
+    else:
+        print("Script not found.")
 
 @client.command()
 async def commands(ctx):
