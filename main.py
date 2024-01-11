@@ -2,12 +2,11 @@ import discord
 import os
 import random
 import giphy_client
-import requests
 from discord.ext import commands 
 from keep_alive import keep_alive
 from giphy_client.rest import ApiException
+import requests
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone, timedelta
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -41,11 +40,13 @@ eight_ball_responses = [
     "Very doubtful.",
 ]
 
+#8ball command
 @client.command()
 async def eightball(ctx):
     response = random.choice(eight_ball_responses)
     await ctx.channel.send("`" + response + "`")
 
+#Coinflip command
 @client.command()
 async def coinflip(ctx):
     result = random.randint(1, 2)
@@ -54,6 +55,7 @@ async def coinflip(ctx):
     if result == 2:
         await ctx.channel.send("`Tails`")
 
+#Poll command
 @client.command()
 async def poll(ctx,*,message):
     emb=discord.Embed(title=" POLL", description=f"{message}")
@@ -61,9 +63,10 @@ async def poll(ctx,*,message):
     await msg.add_reaction('👍')
     await msg.add_reaction('👎')
 
+#GIF command
 @client.command()
 async def gif(ctx,*,q="GIF"):
-    
+
     api_key = 'HJ3CAg2TP3Gr7LGMv9MPQwWYmveIyOan'
     api_instance = giphy_client.DefaultApi()
 
@@ -73,51 +76,28 @@ async def gif(ctx,*,q="GIF"):
         giff = random.choice(lst)
         await ctx.channel.send("From Giphy:")
         await ctx.channel.send(f"https://giphy.com/gifs/{giff.id}")
-                
+
     except ApiException as e:
         print("ApiException when calling Api.")
-        
+
+# News command
 @client.command()
 async def news(ctx):
-    url = 'https://www.bbc.com/news'
-    r = requests.get(url)
+    link = 'https://www.cnbc.com/world/?region=world'
+    page = requests.get(link)
+    soup = BeautifulSoup(page.text, 'html.parser')
     
-    soup = BeautifulSoup(r.text, 'html.parser')
+    headlines = soup.find_all("a", class_='LatestNews-headline')
+    links = [headline['href'] for headline in headlines]
+    headline_texts = [headline.text.strip() for headline in headlines]
     
-    # Find all elements containing article titles
-    script = soup.find_all('h2')
-    links = soup.find_all('div')
-    
-    article_names = set() # To store unique article names
-    listName = []
-    
-    for div in links:
-        for attribute in div.find_all('a', href=True):
-            listName.append(attribute['href'])
-    
-    if script:
-        for index, article in enumerate(script[:12]):
-            article_title = article.text
-    
-            if article_title not in article_names: # Store unique article names
-                article_names.add(article_title)
-    
-        listIndex = 91
-        for index, unique_name in enumerate(article_names):
-            print(f"Article {index + 1}: {unique_name}")
-            print(f"(WIP) Link {(index) + 1}: https://www.bbc.com{listName[listIndex]}")
-            if listIndex <= 101:
-                listIndex += 1
-    
-        # for index in range(91, 101):
-        #     print(f"(WIP) Link {(index-91) + 1}: https://www.bbc.com{listName[index]}")
-    
-    else:
-        print("Script not found.")
+    time_news = soup.find_all("span", class_='LatestNews-wrapper')
+    for i in range(10):
+        await ctx.channel.send(f"Article headline {i+1}: {headline_texts[i]}\nLink: {links[i]}\nTime: {time_news[i].text.strip()}")
 
 @client.command()
 async def commands(ctx):
-    await ctx.channel.send("`;poll [user_input] - creates a poll\n;eightball - magic 8ball\n;coinflip - heads or tails\n;gif [user_input] - sends GIF\n;news - current top 10 BBC articles`")
+    await ctx.channel.send("`;poll [user_input] - creates a poll\n;eightball - magic 8ball\n;coinflip - heads or tails\n;gif [user_input] - sends GIF\n;news - 10 latest CNBC articles`")
 
 keep_alive()
 TOKEN = os.environ.get('SECRET_DISCORD_TOKEN')
