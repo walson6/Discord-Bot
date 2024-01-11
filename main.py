@@ -7,14 +7,15 @@ from keep_alive import keep_alive
 from giphy_client.rest import ApiException
 import requests
 from bs4 import BeautifulSoup
+import asyncio
 
 intents = discord.Intents.default()
 intents.message_content = True
-client = commands.Bot(command_prefix=";", intents=intents)
+client = commands.Bot(command_prefix=";", help_command=None, intents=intents)
 
 @client.event
 async def on_ready():
-    await client.change_presence(status=discord.Status, activity=discord.Game("type ;commands"))
+    await client.change_presence(status=discord.Status, activity=discord.Game("type ;help"))
     print(f"Bot is now online {client.user}")
 
 eight_ball_responses = [
@@ -80,24 +81,103 @@ async def gif(ctx,*,q="GIF"):
     except ApiException as e:
         print("ApiException when calling Api.")
 
-# News command
+# Initial news prompt
 @client.command()
 async def news(ctx):
-    link = 'https://www.cnbc.com/world/?region=world'
+    message = await ctx.send('What category would you like to see? \n :computer:  Technology \n :earth_americas:  Politics \n :star:  Celebrities \n :flag_kr:  K-Pop')
+    
+    tech = '💻'
+    politics = '🌎'
+    celebrity = '⭐'
+    kpop = '🇰🇷'
+
+    await message.add_reaction(tech)
+    await message.add_reaction(politics)
+    await message.add_reaction(celebrity)
+    await message.add_reaction(kpop)
+
+    def check(reaction, user):
+        return user == ctx.author and str(
+            reaction.emoji) in [tech, politics, celebrity, kpop]
+
+    member = ctx.author
+
+    while True:
+        try:
+            reaction, user = await client.wait_for("reaction_add", timeout=10.0, check=check)
+
+            if str(reaction.emoji) == tech:
+                await technews(ctx)
+            elif str(reaction.emoji) == politics:
+                await politicsnews(ctx)
+            elif str(reaction.emoji) == celebrity:
+                await celebritynews(ctx)
+            elif str(reaction.emoji) == kpop:
+                await kpopnews(ctx)
+        except asyncio.TimeoutError:
+            break
+
+# Tech news command
+@client.command()
+async def technews(ctx):
+    link = 'https://www.cnbc.com/technology/'
     page = requests.get(link)
     soup = BeautifulSoup(page.text, 'html.parser')
-    
-    headlines = soup.find_all("a", class_='LatestNews-headline')
+
+    headlines = soup.find_all("a", class_='Card-title')
     links = [headline['href'] for headline in headlines]
     headline_texts = [headline.text.strip() for headline in headlines]
-    
-    time_news = soup.find_all("span", class_='LatestNews-wrapper')
-    for i in range(10):
-        await ctx.channel.send(f"Article headline {i+1}: {headline_texts[i]}\nLink: {links[i]}\nTime: {time_news[i].text.strip()}")
 
+    time_news = soup.find_all("span", class_='Card-time')
+    for i in range(3):
+        await ctx.channel.send(f"__`Article headline {i+1}:`__ " + headline_texts[i] + "\n__`Link:`__ " + links[i] + "\n__`Time:`__ " + time_news[i].text.strip())
+
+# Politic news command
 @client.command()
-async def commands(ctx):
-    await ctx.channel.send("`;poll [user_input] - creates a poll\n;eightball - magic 8ball\n;coinflip - heads or tails\n;gif [user_input] - sends GIF\n;news - 10 latest CNBC articles`")
+async def politicsnews(ctx):
+    link = 'https://www.cnbc.com/politics/'
+    page = requests.get(link)
+    soup = BeautifulSoup(page.text, 'html.parser')
+
+    headlines = soup.find_all("a", class_='Card-title')
+    links = [headline['href'] for headline in headlines]
+    headline_texts = [headline.text.strip() for headline in headlines]
+
+    time_news = soup.find_all("span", class_='Card-time')
+    for i in range(3):
+        await ctx.channel.send(f"__`Article headline {i+1}:`__ " + headline_texts[i] + "\n__`Link:`__ " + links[i] + "\n__`Time:`__ " + time_news[i].text.strip())
+
+# Social media trend news command
+@client.command()
+async def celebritynews(ctx):
+    link = 'https://www.usmagazine.com/tag/exclusive/'
+    page = requests.get(link)
+    soup = BeautifulSoup(page.text, 'html.parser')
+
+    headlines = soup.find_all("a", class_='content-card-link')
+    links = [headline['href'] for headline in headlines]
+    headline_texts = [headline.find('div', class_='content-card-title').text.strip() for headline in headlines]
+
+    for i in range(3):
+        await ctx.channel.send(f"__`Article headline {i+1}:`__ " + headline_texts[i] + "\n__`Link:`__ " + links[i])
+
+# Kpop news command
+@client.command()
+async def kpopnews(ctx):
+    link = 'https://www.scmp.com/k-pop/news'
+    page = requests.get(link)
+    soup = BeautifulSoup(page.text, 'html.parser')
+
+    headlines = soup.find_all("a", class_='article__link')
+    links = [headline['href'] for headline in headlines]
+    headline_texts = [headline.text.strip() for headline in headlines]
+    for i in range(3):
+        await ctx.channel.send(f"__`Article headline {i+1}:`__ " + headline_texts[i] + "\n__`Link:`__ " + links[i])
+
+# Help command
+@client.command()
+async def help(context):
+    await context.channel.send("`;poll [user_input] - creates a poll\n;eightball - magic 8ball\n;coinflip - heads or tails\n;gif [user_input] - sends GIF\n;news - news articles`")
 
 keep_alive()
 TOKEN = os.environ.get('SECRET_DISCORD_TOKEN')
