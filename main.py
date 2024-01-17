@@ -9,6 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 import asyncio
 
+api_key = os.environ.get('SECRET_GIF_TOKEN')
+discord_key = os.environ.get('SECRET_DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 client = commands.Bot(command_prefix=";", help_command=None, intents=intents)
@@ -68,7 +70,6 @@ async def poll(ctx,*,message):
 @client.command()
 async def gif(ctx,*,q="GIF"):
 
-    api_key = 'HJ3CAg2TP3Gr7LGMv9MPQwWYmveIyOan'
     api_instance = giphy_client.DefaultApi()
 
     try:
@@ -99,8 +100,6 @@ async def news(ctx):
     def check(reaction, user):
         return user == ctx.author and str(
             reaction.emoji) in [tech, politics, celebrity, kpop]
-
-    member = ctx.author
 
     while True:
         try:
@@ -147,7 +146,7 @@ async def politicsnews(ctx):
     for i in range(3):
         await ctx.channel.send(f"__`Article headline {i+1}:`__ " + headline_texts[i] + "\n__`Link:`__ " + links[i] + "\n__`Time:`__ " + time_news[i].text.strip())
 
-# Social media trend news command
+# Celebrity news command
 @client.command()
 async def celebritynews(ctx):
     link = 'https://www.usmagazine.com/tag/exclusive/'
@@ -180,5 +179,4 @@ async def help(context):
     await context.channel.send("`;poll [user_input] - creates a poll\n;eightball - magic 8ball\n;coinflip - heads or tails\n;gif [user_input] - sends GIF\n;news - news articles`")
 
 keep_alive()
-TOKEN = os.environ.get('SECRET_DISCORD_TOKEN')
-client.run(TOKEN)
+client.run(discord_key)
