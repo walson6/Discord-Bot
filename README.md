@@ -11,3 +11,5 @@ A friend's Discord server wanted basic commands like polling, quick GIFs, and co
 - `coinflip`
 - `gif`
 - `news`
+
+![](https://github.com/walson6/Discord-Bot/blob/main/discordbotnews.gif)
